@@ -4,11 +4,11 @@ import { Search, Skull, Crosshair, Cog, Gauge, ListOrdered, Bot, Users, Coins, H
 import { ENCOUNTERS, GROUPS, findEncounter, type Encounter } from "@/data/encounters";
 import { CoachPanel } from "@/components/coach/CoachPanel";
 
-type Search = { stage?: string };
+type Search = { stage?: string | undefined };
 
 export const Route = createFileRoute("/")({
   validateSearch: (s: Record<string, unknown>): Search => ({
-    stage: typeof s.stage === "string" ? s.stage : undefined,
+    stage: typeof s["stage"] === "string" ? s["stage"] : undefined,
   }),
   head: () => ({
     meta: [
