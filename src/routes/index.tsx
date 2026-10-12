@@ -28,7 +28,7 @@ const ROSTER_KEY = "rsl-roster-notes";
 function Index() {
   const { stage } = Route.useSearch();
   const navigate = useNavigate({ from: "/" });
-  const enc = findEncounter(stage ?? "") ?? ENCOUNTERS[0];
+  const enc = findEncounter(stage ?? "") ?? ENCOUNTERS[0]!;
   const [q, setQ] = useState("");
   const [roster, setRoster] = useState("");
 
