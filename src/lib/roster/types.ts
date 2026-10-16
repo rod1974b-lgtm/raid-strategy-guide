@@ -36,10 +36,10 @@ export type Artifact = {
   rank: number;
   rarity: string;
   level: number;
-  faction?: string;
+  faction?: string | undefined;
   primary: Bonus;
   subs: Bonus[];
-  ownerId?: string;
+  ownerId?: string | undefined;
 };
 
 export type Champion = {
@@ -52,7 +52,7 @@ export type Champion = {
   faction: string;
   role: string;
   tag: ChampionTag;
-  inVault?: boolean;
+  inVault?: boolean | undefined;
   base: Stats;
 };
 
