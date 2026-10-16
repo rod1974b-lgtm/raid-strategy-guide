@@ -1,4 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { loadRoster, rosterBriefForCoach } from "@/lib/roster/store";
 import { useEffect, useMemo, useState } from "react";
 import { Search, Skull, Crosshair, Cog, Gauge, ListOrdered, Bot, Users, Coins, Hammer } from "lucide-react";
 import { ENCOUNTERS, GROUPS, findEncounter, type Encounter } from "@/data/encounters";
@@ -32,9 +33,12 @@ function Index() {
   const [q, setQ] = useState("");
   const [roster, setRoster] = useState("");
 
+  const [brief, setBrief] = useState("");
   useEffect(() => {
     setRoster(localStorage.getItem(ROSTER_KEY) ?? "");
+    setBrief(rosterBriefForCoach(loadRoster()));
   }, []);
+  const coachRoster = [roster, brief].filter(Boolean).join("\n\n");
 
   const filtered = useMemo(
     () => ENCOUNTERS.filter((e) => `${e.name} ${e.mode}`.toLowerCase().includes(q.toLowerCase())),
@@ -46,7 +50,10 @@ function Index() {
       <header className="flex items-center gap-3 border-b border-border px-5 py-3">
         <Crosshair className="h-6 w-6 text-primary" />
         <h1 className="font-display text-lg tracking-wider text-primary">Raid Tactical Companion</h1>
-        <span className="ml-2 rounded border border-border px-2 py-0.5 text-xs text-muted-foreground">Phase 1 · Stage Engine & Coach</span>
+        <span className="ml-2 rounded border border-border px-2 py-0.5 text-xs text-muted-foreground">Stage Engine & Coach</span>
+        <Link to="/roster" className="ml-auto rounded-md border border-primary px-3 py-1 text-sm text-primary hover:bg-primary hover:text-primary-foreground">
+          Roster Hub
+        </Link>
       </header>
 
       <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[260px_1fr_420px]">
