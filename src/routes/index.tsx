@@ -1,9 +1,23 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { loadRoster, rosterBriefForCoach } from "@/lib/roster/store";
+import { loadRoster, rosterBriefForCoach, useRoster } from "@/lib/roster/store";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Skull, Crosshair, Cog, Gauge, ListOrdered, Bot, Users, Coins, Hammer } from "lucide-react";
+import {
+  Search,
+  Skull,
+  Crosshair,
+  Cog,
+  Gauge,
+  ListOrdered,
+  Bot,
+  Users,
+  Coins,
+  Hammer,
+  Sparkles,
+} from "lucide-react";
 import { ENCOUNTERS, GROUPS, findEncounter, type Encounter } from "@/data/encounters";
 import { CoachPanel } from "@/components/coach/CoachPanel";
+import { Button } from "@/components/ui/button";
+import { GearSwapModal } from "@/components/gear/GearSwapModal";
 
 type Search = { stage?: string | undefined };
 
@@ -14,9 +28,16 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Raid Tactical Companion — Stage Coach & Stat Checkpoints" },
-      { name: "description", content: "Stage cheat sheets, stat checkpoints, turn order, Auto AI presets and a live AI coach for every Raid: Shadow Legends mode." },
+      {
+        name: "description",
+        content:
+          "Stage cheat sheets, stat checkpoints, turn order, Auto AI presets, automated gear optimizer, and a live AI coach for every Raid: Shadow Legends mode.",
+      },
       { property: "og:title", content: "Raid Tactical Companion" },
-      { property: "og:description", content: "Stage-aware AI coach and threshold database for Raid: Shadow Legends." },
+      {
+        property: "og:description",
+        content: "Stage-aware AI coach and gear harvesting engine for Raid: Shadow Legends.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -32,28 +53,53 @@ function Index() {
   const enc = findEncounter(stage ?? "") ?? ENCOUNTERS[0]!;
   const [q, setQ] = useState("");
   const [roster, setRoster] = useState("");
+  const [gearModalOpen, setGearModalOpen] = useState(false);
+
+  const { data: rosterData, update: updateRoster } = useRoster();
 
   const [brief, setBrief] = useState("");
   useEffect(() => {
     setRoster(localStorage.getItem(ROSTER_KEY) ?? "");
     setBrief(rosterBriefForCoach(loadRoster()));
-  }, []);
+  }, [rosterData]);
+
   const coachRoster = [roster, brief].filter(Boolean).join("\n\n");
 
   const filtered = useMemo(
-    () => ENCOUNTERS.filter((e) => `${e.name} ${e.mode}`.toLowerCase().includes(q.toLowerCase())),
-    [q],
+    () =>
+      ENCOUNTERS.filter((e) =>
+        `${e.name} ${e.mode}`.toLowerCase().includes(q.toLowerCase())
+      ),
+    [q]
   );
 
   return (
     <div className="flex h-screen flex-col bg-background">
       <header className="flex items-center gap-3 border-b border-border px-5 py-3">
         <Crosshair className="h-6 w-6 text-primary" />
-        <h1 className="font-display text-lg tracking-wider text-primary">Raid Tactical Companion</h1>
-        <span className="ml-2 rounded border border-border px-2 py-0.5 text-xs text-muted-foreground">Stage Engine & Coach</span>
-        <Link to="/roster" className="ml-auto rounded-md border border-primary px-3 py-1 text-sm text-primary hover:bg-primary hover:text-primary-foreground">
-          Roster Hub
-        </Link>
+        <h1 className="font-display text-lg tracking-wider text-primary">
+          Raid Tactical Companion
+        </h1>
+        <span className="ml-2 rounded border border-border px-2 py-0.5 text-xs text-muted-foreground">
+          Stage Engine & Coach
+        </span>
+        <div className="ml-auto flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-primary text-primary hover:bg-primary hover:text-primary-foreground gap-1.5"
+            onClick={() => setGearModalOpen(true)}
+          >
+            <Sparkles className="h-3.5 w-3.5 text-accent" />
+            Harvest Gear for Stage
+          </Button>
+          <Link
+            to="/roster"
+            className="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground hover:border-primary hover:text-primary"
+          >
+            Roster Hub ({rosterData.champions.length} Champs)
+          </Link>
+        </div>
       </header>
 
       <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[260px_1fr_420px]">
@@ -75,13 +121,17 @@ function Index() {
               if (!items.length) return null;
               return (
                 <div key={g.id} className="mb-3">
-                  <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{g.label}</div>
+                  <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                    {g.label}
+                  </div>
                   {items.map((e) => (
                     <button
                       key={e.id}
                       onClick={() => navigate({ search: { stage: e.id } })}
                       className={`block w-full rounded px-2 py-1.5 text-left text-sm ${
-                        e.id === enc.id ? "bg-primary text-primary-foreground" : "hover:bg-secondary"
+                        e.id === enc.id
+                          ? "bg-primary text-primary-foreground"
+                          : "hover:bg-secondary"
                       }`}
                     >
                       {e.name}
@@ -92,7 +142,9 @@ function Index() {
             })}
           </nav>
           <div className="border-t border-border p-3">
-            <label className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">My roster & gear notes</label>
+            <label className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+              My roster & gear notes
+            </label>
             <textarea
               value={roster}
               onChange={(e) => {
@@ -103,23 +155,42 @@ function Index() {
               placeholder="Core: Maneater 6★ 60 booked… Vault: Kael, Elhain… Key gear: 2 speed boots 4x…"
               className="mt-1 w-full resize-none rounded-md border border-input bg-transparent p-2 text-xs outline-none focus:border-primary"
             />
-            <p className="text-[11px] text-muted-foreground">The coach uses this for substitutes and gear pulls.</p>
+            <p className="text-[11px] text-muted-foreground">
+              The coach uses this for substitutes and gear pulls.
+            </p>
           </div>
         </aside>
 
         <main className="min-h-0 overflow-y-auto p-5">
-          <StageSheet e={enc} />
+          <StageSheet
+            e={enc}
+            onOpenGearModal={() => setGearModalOpen(true)}
+          />
         </main>
 
         <section className="min-h-[500px] border-l border-border bg-card lg:min-h-0">
-          <CoachPanel encounter={enc} roster={roster} />
+          <CoachPanel encounter={enc} roster={coachRoster} />
         </section>
       </div>
+
+      <GearSwapModal
+        open={gearModalOpen}
+        onOpenChange={setGearModalOpen}
+        encounter={enc}
+        roster={rosterData}
+        onUpdateRoster={(updated) => updateRoster(() => updated)}
+      />
     </div>
   );
 }
 
-function StageSheet({ e }: { e: Encounter }) {
+function StageSheet({
+  e,
+  onOpenGearModal,
+}: {
+  e: Encounter;
+  onOpenGearModal: () => void;
+}) {
   const stats = [
     ["True Speed", e.stats.speed],
     ["Accuracy", e.stats.acc],
@@ -130,32 +201,72 @@ function StageSheet({ e }: { e: Encounter }) {
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
-      <div>
-        <div className="text-xs uppercase tracking-widest text-accent">
-          {e.mode}
-          {e.affinity ? ` · ${e.affinity}` : ""}
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="text-xs uppercase tracking-widest text-accent">
+            {e.mode}
+            {e.affinity ? ` · ${e.affinity}` : ""}
+          </div>
+          <h2 className="font-display text-2xl text-foreground">{e.name}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{e.summary}</p>
         </div>
-        <h2 className="font-display text-2xl text-foreground">{e.name}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{e.summary}</p>
+        <Button
+          onClick={onOpenGearModal}
+          size="sm"
+          className="gap-1.5"
+        >
+          <Sparkles className="h-4 w-4" /> Optimize Team Gear
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {stats.slice(0, 4).map(([k, v]) => (
           <div key={k} className="rounded-md border border-border bg-card p-3">
-            <div className="text-[11px] uppercase tracking-widest text-muted-foreground">{k}</div>
+            <div className="text-[11px] uppercase tracking-widest text-muted-foreground">
+              {k}
+            </div>
             <div className="mt-1 text-sm font-semibold text-primary">{v}</div>
           </div>
         ))}
       </div>
-      {e.stats.other && <p className="text-xs text-muted-foreground">Note: {e.stats.other}</p>}
+      {e.stats.other && (
+        <p className="text-xs text-muted-foreground">Note: {e.stats.other}</p>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Block icon={<Skull className="h-4 w-4" />} title="What wipes teams here" items={e.wipes} tone="danger" />
-        <Block icon={<Crosshair className="h-4 w-4" />} title="Kill priority" items={e.killOrder} />
-        <Block icon={<Cog className="h-4 w-4" />} title="Mandatory mechanics" items={e.mechanics} />
-        <Block icon={<ListOrdered className="h-4 w-4" />} title="Turn-order sequence" items={e.turnOrder} ordered />
-        <Block icon={<Hammer className="h-4 w-4" />} title="Gear these first" items={e.gearFirst} ordered />
-        <Block icon={<Users className="h-4 w-4" />} title="Template team" items={e.team} />
+        <Block
+          icon={<Skull className="h-4 w-4" />}
+          title="What wipes teams here"
+          items={e.wipes}
+          tone="danger"
+        />
+        <Block
+          icon={<Crosshair className="h-4 w-4" />}
+          title="Kill priority"
+          items={e.killOrder}
+        />
+        <Block
+          icon={<Cog className="h-4 w-4" />}
+          title="Mandatory mechanics"
+          items={e.mechanics}
+        />
+        <Block
+          icon={<ListOrdered className="h-4 w-4" />}
+          title="Turn-order sequence"
+          items={e.turnOrder}
+          ordered
+        />
+        <Block
+          icon={<Hammer className="h-4 w-4" />}
+          title="Gear these first"
+          items={e.gearFirst}
+          ordered
+        />
+        <Block
+          icon={<Users className="h-4 w-4" />}
+          title="Template team"
+          items={e.team}
+        />
       </div>
 
       <div className="rounded-md border border-border bg-card p-4">
@@ -164,7 +275,10 @@ function StageSheet({ e }: { e: Encounter }) {
         </h3>
         <div className="divide-y divide-border">
           {e.aiPresets.map((p) => (
-            <div key={p.role} className="flex justify-between gap-4 py-2 text-sm">
+            <div
+              key={p.role}
+              className="flex justify-between gap-4 py-2 text-sm"
+            >
               <span className="font-medium">{p.role}</span>
               <span className="text-right text-muted-foreground">{p.preset}</span>
             </div>
@@ -179,20 +293,41 @@ function StageSheet({ e }: { e: Encounter }) {
         <p className="text-sm text-muted-foreground">{e.budget}</p>
       </div>
       <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
-        <Gauge className="h-3 w-3" /> Checkpoints are community benchmarks for reliable auto clears; ask the coach to tailor them to your team.
+        <Gauge className="h-3 w-3" /> Checkpoints are community benchmarks for
+        reliable auto clears; ask the coach to tailor them to your team.
       </p>
     </div>
   );
 }
 
-function Block({ icon, title, items, ordered, tone }: { icon: React.ReactNode; title: string; items: string[]; ordered?: boolean; tone?: "danger" }) {
+function Block({
+  icon,
+  title,
+  items,
+  ordered,
+  tone,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  items: string[];
+  ordered?: boolean;
+  tone?: "danger";
+}) {
   const L = ordered ? "ol" : "ul";
   return (
     <div className="rounded-md border border-border bg-card p-4">
-      <h3 className={`mb-2 flex items-center gap-2 text-sm font-semibold ${tone === "danger" ? "text-destructive" : "text-primary"}`}>
+      <h3
+        className={`mb-2 flex items-center gap-2 text-sm font-semibold ${
+          tone === "danger" ? "text-destructive" : "text-primary"
+        }`}
+      >
         {icon} {title}
       </h3>
-      <L className={`space-y-1 pl-4 text-sm ${ordered ? "list-decimal" : "list-disc"}`}>
+      <L
+        className={`space-y-1 pl-4 text-sm ${
+          ordered ? "list-decimal" : "list-disc"
+        }`}
+      >
         {items.map((i) => (
           <li key={i}>{i}</li>
         ))}
