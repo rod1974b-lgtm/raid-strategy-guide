@@ -34,7 +34,7 @@ export const Route = createFileRoute("/api/chat")({
           BASE_PROMPT,
           enc ? `\n## Encounter currently open on screen\n${encounterToBrief(enc)}` : "",
           body.roster?.trim()
-            ? `\n## Player's roster & gear notes (use for substitutions and gear plans)\n${body.roster.slice(0, 6000)}`
+            ? `\n## Player's roster & gear notes (use for substitutions and gear plans)\n${body.roster.slice(0, 12000)}`
             : "",
         ].join("\n");
 
